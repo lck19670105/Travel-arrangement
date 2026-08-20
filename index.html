@@ -17,7 +17,7 @@
     body {
       /* 設定背景為本機同資料夾下的長城圖片 (greatwall.jpg) */
       background: linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.55)), 
-                  url('greatwall.jpg') no-repeat center center fixed; no-repeat center center fixed;
+                  url('greatwall.jpg') no-repeat center center fixed;
       background-size: cover;
       min-height: 100vh;
       color: #333;
@@ -287,7 +287,7 @@
       color: #1e3c72;
     }
 
-/* 表格美化樣式 */
+    /* 表格美化樣式 */
     .result-table {
       width: 100%;
       border-collapse: collapse;
@@ -311,9 +311,6 @@
     .result-table tr:nth-child(even) {
       background-color: #f8f9fa;
     }
-
-
-
   </style>
 </head>
 <body>
@@ -389,7 +386,6 @@
           </select>
         </div>
 
-        <!-- 新增：指定必訪景點文字對話框 -->
         <div class="form-group full-width">
           <label for="mustVisit">指定必訪景點 / 特別需求（選填）：</label>
           <textarea id="mustVisit" placeholder="例如：一定要包含九寨溝、黃龍；或者想去當地夜市吃小吃、不安排爬山行程..."></textarea>
@@ -401,64 +397,71 @@
 
     <!-- 結果與操作功能區 -->
     <div id="result-section">
-      <!-- 結果與操作功能區 -->
-      <div id="result-section">
-        <div id="loading" class="loading">
-          <div>行程規劃中，請稍候...</div>
-          <!-- 卡通背包客動畫結構 -->
-          <div class="backpacker-track">
-            <div class="backpacker">
-              <div class="bp-head"></div>
-              <div class="bp-body">
-                <div class="bp-pack"></div>
-              </div>
-              <div class="bp-legs">
-                <div class="bp-leg bp-leg-left"></div>
-                <div class="bp-leg bp-leg-right"></div>
-              </div>
+      <div id="loading" class="loading">
+        <div>行程規劃中，請稍候...</div>
+        <!-- 卡通背包客動畫結構 -->
+        <div class="backpacker-track">
+          <div class="backpacker">
+            <div class="bp-head"></div>
+            <div class="bp-body">
+              <div class="bp-pack"></div>
+            </div>
+            <div class="bp-legs">
+              <div class="bp-leg bp-leg-left"></div>
+              <div class="bp-leg bp-leg-right"></div>
             </div>
           </div>
         </div>
+      </div>
+      
+      <div id="output-container" style="display: none;">
+        <div class="action-buttons">
+          <button id="btn-export-pdf" class="btn-action btn-pdf">📄 輸出為 PDF 檔案</button>
+          <button id="btn-reset-form" class="btn-action btn-reset">↺ 返回修改參數</button>
+        </div>
         
-        <div id="output-container" style="display: none;">
-          <!-- 保持原本的 action-buttons 與 pdf-content 內容不變 -->
+        <div id="pdf-content">
+          <h2 id="pdf-title" style="text-align: center; color: #1e3c72; margin-bottom: 15px;"></h2>
+          <div id="plan-display" class="plan-content"></div>
         </div>
       </div>
+    </div>
+  </div>
 
   <script>
-  const travelForm = document.getElementById('travel-form');
-  const resultSection = document.getElementById('result-section');
-  const loading = document.getElementById('loading');
-  const outputContainer = document.getElementById('output-container');
-  const planDisplay = document.getElementById('plan-display');
-  const pdfTitle = document.getElementById('pdf-title');
+    const travelForm = document.getElementById('travel-form');
+    const resultSection = document.getElementById('result-section');
+    const loading = document.getElementById('loading');
+    const outputContainer = document.getElementById('output-container');
+    const planDisplay = document.getElementById('plan-display');
+    const pdfTitle = document.getElementById('pdf-title');
 
-  travelForm.addEventListener('submit', async function(e) {
-    e.preventDefault();
+    travelForm.addEventListener('submit', async function(e) {
+      e.preventDefault();
 
-    const province = document.getElementById('province').value;
-    const startDate = document.getElementById('startDate').value;
-    const endDate = document.getElementById('endDate').value;
-    const travelers = document.getElementById('travelers').value;
-    const budget = document.getElementById('budget').value;
-    const mustVisit = document.getElementById('mustVisit').value.trim();
+      const province = document.getElementById('province').value;
+      const startDate = document.getElementById('startDate').value;
+      const endDate = document.getElementById('endDate').value;
+      const travelers = document.getElementById('travelers').value;
+      const budget = document.getElementById('budget').value;
+      const mustVisit = document.getElementById('mustVisit').value.trim();
 
-    if (new Date(startDate) > new Date(endDate)) {
-      alert('結束日期不能早於出發日期！');
-      return;
-    }
+      if (new Date(startDate) > new Date(endDate)) {
+        alert('結束日期不能早於出發日期！');
+        return;
+      }
 
-    // 切換 UI 狀態
-    travelForm.style.display = 'none';
-    resultSection.style.display = 'block';
-    loading.style.display = 'block';
-    outputContainer.style.display = 'none';
-    planDisplay.innerHTML = '';
+      // 切換 UI 狀態
+      travelForm.style.display = 'none';
+      resultSection.style.display = 'block';
+      loading.style.display = 'block';
+      outputContainer.style.display = 'none';
+      planDisplay.innerHTML = '';
 
-    // 構建 Prompt
-    let mustVisitPrompt = mustVisit ? `- **必須包含的景點或特別指示**：${mustVisit}` : '';
+      // 構建 Prompt
+      let mustVisitPrompt = mustVisit ? `- **必須包含的景點或特別指示**：${mustVisit}` : '';
 
-    const prompt = `
+      const prompt = `
 你是一位精通中國大陸旅遊的專業行程規劃師。請幫我設計一份深度的旅遊規劃。
 
 【旅遊需求細節】
@@ -482,102 +485,108 @@ ${mustVisitPrompt}
    - 請提供 **「全趟行程總預算評估表」**，欄位包含：\`費用項目\`、\`總計 (RMB)\`、\`總計 (TWD)\`、\`人均花費 (TWD)\`。
 
 請使用繁體中文，格式請保持結構清晰、易於閱讀。
-    `;
+      `;
 
-    try {
-      // 呼叫本機/Vercel 的 Serverless Function 轉接層，不暴露 API Key
-      const response = await fetch('/api/generate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ prompt: prompt })
-      });
+      try {
+        // 呼叫 Vercel Serverless Function 轉接層
+        const response = await fetch('/api/generate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ prompt: prompt })
+        });
 
-      const data = await response.json();
+        const data = await response.json();
 
-      if (data.error) {
-        throw new Error(typeof data.error === 'string' ? data.error : data.error.message || 'API 呼叫失敗');
-      }
-
-      const generatedText = data.candidates[0].content.parts[0].text;
-      
-      // 解析 Markdown 粗體與標題
-      let formattedText = generatedText
-        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-        .replace(/### (.*?)\n/g, '<h3 style="color:#1e3c72; margin-top:20px; margin-bottom:10px;">$1</h3>')
-        .replace(/## (.*?)\n/g, '<h2 style="color:#1e3c72; margin-top:25px; border-bottom:2px solid #1e3c72; padding-bottom:5px;">$1</h2>');
-
-      // 解析 Markdown 表格轉為 HTML <table>
-      formattedText = parseMarkdownTable(formattedText);
-
-      loading.style.display = 'none';
-      outputContainer.style.display = 'block';
-      pdfTitle.innerText = `${province} ${travelers}人深度之旅 (${startDate} ~ ${endDate})`;
-      planDisplay.innerHTML = formattedText;
-
-    } catch (error) {
-      loading.style.display = 'none';
-      outputContainer.style.display = 'block';
-      planDisplay.innerHTML = `<span style="color: red; font-weight: bold;">生成失敗：${error.message}<br>請確認服務是否已正常部署並已於 Vercel 後台設定 GEMINI_API_KEY。</span>`;
-    }
-  });
-
-  // Markdown 表格轉 HTML 表格解析函式
-  function parseMarkdownTable(text) {
-    const lines = text.split('\n');
-    let inTable = false;
-    let html = '';
-
-    lines.forEach((line) => {
-      const trimmed = line.trim();
-      if (trimmed.startsWith('|') && trimmed.endsWith('|')) {
-        if (trimmed.includes('---')) return; // 跳過語法分隔線 |---|
-
-        const cells = trimmed.split('|').slice(1, -1).map(c => c.trim());
-        if (!inTable) {
-          inTable = true;
-          html += '<table class="result-table"><thead><tr>';
-          cells.forEach(cell => html += `<th>${cell}</th>`);
-          html += '</tr></thead><tbody>';
-        } else {
-          html += '<tr>';
-          cells.forEach(cell => html += `<td>${cell}</td>`);
-          html += '</tr>';
+        if (data.error) {
+          throw new Error(typeof data.error === 'string' ? data.error : data.error.message || 'API 呼叫失敗');
         }
-      } else {
-        if (inTable) {
-          inTable = false;
-          html += '</tbody></table>';
-        }
-        html += line + '\n';
+
+        const generatedText = data.candidates[0].content.parts[0].text;
+        
+        // 解析 Markdown 粗體與標題
+        let formattedText = generatedText
+          .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+          .replace(/### (.*?)\n/g, '<h3 style="color:#1e3c72; margin-top:20px; margin-bottom:10px;">$1</h3>')
+          .replace(/## (.*?)\n/g, '<h2 style="color:#1e3c72; margin-top:25px; border-bottom:2px solid #1e3c72; padding-bottom:5px;">$1</h2>');
+
+        // 解析 Markdown 表格轉為 HTML <table>
+        formattedText = parseMarkdownTable(formattedText);
+
+        loading.style.display = 'none';
+        outputContainer.style.display = 'block';
+        pdfTitle.innerText = `${province} ${travelers}人深度之旅 (${startDate} ~ ${endDate})`;
+        planDisplay.innerHTML = formattedText;
+
+      } catch (error) {
+        loading.style.display = 'none';
+        outputContainer.style.display = 'block';
+        planDisplay.innerHTML = `<span style="color: red; font-weight: bold;">生成失敗：${error.message}<br>請確認服務是否已正常部署並已於 Vercel 後台設定 GEMINI_API_KEY。</span>`;
       }
     });
 
-    if (inTable) html += '</tbody></table>';
-    return html;
-  }
+    // Markdown 表格轉 HTML 表格解析函式
+    function parseMarkdownTable(text) {
+      const lines = text.split('\n');
+      let inTable = false;
+      let html = '';
 
-  // 功能一：匯出 PDF 檔案
-  document.getElementById('btn-export-pdf').addEventListener('click', function() {
-    const element = document.getElementById('pdf-content');
-    const opt = {
-      margin:       10,
-      filename:     'Have_a_Nice_Day_行程規劃.pdf',
-      image:        { type: 'jpeg', quality: 0.98 },
-      html2canvas:  { scale: 2 },
-      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    };
+      lines.forEach((line) => {
+        const trimmed = line.trim();
+        if (trimmed.startsWith('|') && trimmed.endsWith('|')) {
+          if (trimmed.includes('---')) return; // 跳過語法分隔線 |---|
 
-    html2pdf().set(opt).from(element).save();
-  });
+          const cells = trimmed.split('|').slice(1, -1).map(c => c.trim());
+          if (!inTable) {
+            inTable = true;
+            html += '<table class="result-table"><thead><tr>';
+            cells.forEach(cell => html += `<th>${cell}</th>`);
+            html += '</tr></thead><tbody>';
+          } else {
+            html += '<tr>';
+            cells.forEach(cell => html += `<td>${cell}</td>`);
+            html += '</tr>';
+          }
+        } else {
+          if (inTable) {
+            inTable = false;
+            html += '</tbody></table>';
+          }
+          html += line + '\n';
+        }
+      });
 
-  // 功能二：重新回到主頁
-  document.getElementById('btn-reset-form').addEventListener('click', function() {
-    resultSection.style.display = 'none';
-    travelForm.style.display = 'block';
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  });
-</script>
+      if (inTable) html += '</tbody></table>';
+      return html;
+    }
+
+    // 功能一：匯出 PDF 檔案
+    const btnExportPdf = document.getElementById('btn-export-pdf');
+    if (btnExportPdf) {
+      btnExportPdf.addEventListener('click', function() {
+        const element = document.getElementById('pdf-content');
+        const opt = {
+          margin:       10,
+          filename:     'Have_a_Nice_Day_行程規劃.pdf',
+          image:        { type: 'jpeg', quality: 0.98 },
+          html2canvas:  { scale: 2 },
+          jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+
+        html2pdf().set(opt).from(element).save();
+      });
+    }
+
+    // 功能二：重新回到主頁
+    const btnResetForm = document.getElementById('btn-reset-form');
+    if (btnResetForm) {
+      btnResetForm.addEventListener('click', function() {
+        resultSection.style.display = 'none';
+        travelForm.style.display = 'block';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+    }
+  </script>
 </body>
 </html>
