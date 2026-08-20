@@ -173,6 +173,26 @@
       position: relative;
     }
 
+    /* 身體部件：手臂（擺動動畫） */
+    .bp-arm {
+      width: 2px;
+      height: 10px;
+      background-color: #e74c3c;
+      position: absolute;
+      top: 1px;
+      transform-origin: top center;
+    }
+
+    .bp-arm-left {
+      left: -2px;
+      animation: limb-swing 0.5s infinite alternate-reverse;
+    }
+
+    .bp-arm-right {
+      right: -2px;
+      animation: limb-swing 0.5s infinite alternate;
+    }
+
     /* 身體部件：背包 */
     .bp-pack {
       width: 7px;
@@ -184,7 +204,7 @@
       left: -6px;
     }
 
-    /* 身體部件：雙腿（走路擺動動畫） */
+    /* 身體部件：雙腿（邁步動畫） */
     .bp-legs {
       display: flex;
       justify-content: space-between;
@@ -197,14 +217,15 @@
       height: 10px;
       background-color: #2c3e50;
       border-radius: 1px;
+      transform-origin: top center;
     }
 
     .bp-leg-left {
-      animation: leg-swing 0.5s infinite alternate;
+      animation: limb-swing 0.5s infinite alternate;
     }
 
     .bp-leg-right {
-      animation: leg-swing 0.5s infinite alternate-reverse;
+      animation: limb-swing 0.5s infinite alternate-reverse;
     }
 
     /* KEYFRAMES：來回走動與轉向 */
@@ -231,10 +252,10 @@
       }
     }
 
-    /* KEYFRAMES：雙腿交替邁步 */
-    @keyframes leg-swing {
-      0% { transform: rotate(-25deg); }
-      100% { transform: rotate(25deg); }
+    /* KEYFRAMES：手腳前後交替擺動 */
+    @keyframes limb-swing {
+      0% { transform: rotate(-30deg); }
+      100% { transform: rotate(30deg); }
     }
 
     .action-buttons {
@@ -399,11 +420,13 @@
     <div id="result-section">
       <div id="loading" class="loading">
         <div>行程規劃中，請稍候...</div>
-        <!-- 卡通背包客動畫結構 -->
+        <!-- 卡通背包客動畫結構（包含手臂與腿部） -->
         <div class="backpacker-track">
           <div class="backpacker">
             <div class="bp-head"></div>
             <div class="bp-body">
+              <div class="bp-arm bp-arm-left"></div>
+              <div class="bp-arm bp-arm-right"></div>
               <div class="bp-pack"></div>
             </div>
             <div class="bp-legs">
