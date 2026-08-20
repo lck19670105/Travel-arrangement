@@ -182,6 +182,34 @@
     .plan-content strong {
       color: #1e3c72;
     }
+
+/* 表格美化樣式 */
+    .result-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+      font-size: 0.95rem;
+    }
+
+    .result-table th, 
+    .result-table td {
+      border: 1px solid #ddd;
+      padding: 10px;
+      text-align: center;
+    }
+
+    .result-table th {
+      background-color: #1e3c72;
+      color: white;
+      font-weight: bold;
+    }
+
+    .result-table tr:nth-child(even) {
+      background-color: #f8f9fa;
+    }
+
+
+
   </style>
 </head>
 <body>
@@ -287,40 +315,39 @@
   </div>
 
   <script>
-    
-    const travelForm = document.getElementById('travel-form');
-    const resultSection = document.getElementById('result-section');
-    const loading = document.getElementById('loading');
-    const outputContainer = document.getElementById('output-container');
-    const planDisplay = document.getElementById('plan-display');
-    const pdfTitle = document.getElementById('pdf-title');
+  const travelForm = document.getElementById('travel-form');
+  const resultSection = document.getElementById('result-section');
+  const loading = document.getElementById('loading');
+  const outputContainer = document.getElementById('output-container');
+  const planDisplay = document.getElementById('plan-display');
+  const pdfTitle = document.getElementById('pdf-title');
 
-    travelForm.addEventListener('submit', async function(e) {
-      e.preventDefault();
+  travelForm.addEventListener('submit', async function(e) {
+    e.preventDefault();
 
-      const province = document.getElementById('province').value;
-      const startDate = document.getElementById('startDate').value;
-      const endDate = document.getElementById('endDate').value;
-      const travelers = document.getElementById('travelers').value;
-      const budget = document.getElementById('budget').value;
-      const mustVisit = document.getElementById('mustVisit').value.trim();
+    const province = document.getElementById('province').value;
+    const startDate = document.getElementById('startDate').value;
+    const endDate = document.getElementById('endDate').value;
+    const travelers = document.getElementById('travelers').value;
+    const budget = document.getElementById('budget').value;
+    const mustVisit = document.getElementById('mustVisit').value.trim();
 
-      if (new Date(startDate) > new Date(endDate)) {
-        alert('結束日期不能早於出發日期！');
-        return;
-      }
+    if (new Date(startDate) > new Date(endDate)) {
+      alert('結束日期不能早於出發日期！');
+      return;
+    }
 
-      // 畫面切換：隱藏表單，顯示載入狀態
-      travelForm.style.display = 'none';
-      resultSection.style.display = 'block';
-      loading.style.display = 'block';
-      outputContainer.style.display = 'none';
-      planDisplay.innerHTML = '';
+    // 切換 UI 狀態
+    travelForm.style.display = 'none';
+    resultSection.style.display = 'block';
+    loading.style.display = 'block';
+    outputContainer.style.display = 'none';
+    planDisplay.innerHTML = '';
 
-      // 構建 Prompt
-      let mustVisitPrompt = mustVisit ? `- **必須包含的景點或特別指示**：${mustVisit}` : '';
+    // 構建 Prompt
+    let mustVisitPrompt = mustVisit ? `- **必須包含的景點或特別指示**：${mustVisit}` : '';
 
-      const prompt = `
+    const prompt = `
 你是一位精通中國大陸旅遊的專業行程規劃師。請幫我設計一份深度的旅遊規劃。
 
 【旅遊需求細節】
@@ -339,67 +366,107 @@ ${mustVisitPrompt}
    - **住**：根據預算類型推薦住宿地點建議（區位或飯店等級）。
    - **行**：說明建議的交通方式（高鐵、地鐵/打車、包車、飛機等）。
 3. **每日行程明細**：請按「第一天」、「第二天」等依序條列，並給出上午、下午、晚上的具體行程規劃。
-4. **費用評估**：
-   - 列出**每日預估花費**（包含門票、餐飲、交通、住宿之小計，單位以人民幣 RMB 標示，並換算約略台幣 TWD）。
-   - 最後提供**全趟行程總預算評估**（所有人的總花費與人均花費）。
+4. **費用評估（必須使用 Markdown 表格）**：
+   - 請提供 **「每日預估花費表」**，欄位包含：\`日期/天數\`、\`景點門票\`、\`餐飲費用\`、\`交通費用\`、\`住宿費用\`、\`當日小計 (RMB)\`、\`折合台幣 (TWD)\`。
+   - 請提供 **「全趟行程總預算評估表」**，欄位包含：\`費用項目\`、\`總計 (RMB)\`、\`總計 (TWD)\`、\`人均花費 (TWD)\`。
 
 請使用繁體中文，格式請保持結構清晰、易於閱讀。
-      `;
+    `;
 
-      try {
-        const response = await fetch('/api/generate', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ prompt: prompt })
-        });
+    try {
+      // 呼叫本機/Vercel 的 Serverless Function 轉接層，不暴露 API Key
+      const response = await fetch('/api/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ prompt: prompt })
+      });
 
-        const data = await response.json();
+      const data = await response.json();
 
-        if (data.error) {
-          throw new Error(data.error.message || 'API 呼叫失敗');
+      if (data.error) {
+        throw new Error(typeof data.error === 'string' ? data.error : data.error.message || 'API 呼叫失敗');
+      }
+
+      const generatedText = data.candidates[0].content.parts[0].text;
+      
+      // 解析 Markdown 粗體與標題
+      let formattedText = generatedText
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/### (.*?)\n/g, '<h3 style="color:#1e3c72; margin-top:20px; margin-bottom:10px;">$1</h3>')
+        .replace(/## (.*?)\n/g, '<h2 style="color:#1e3c72; margin-top:25px; border-bottom:2px solid #1e3c72; padding-bottom:5px;">$1</h2>');
+
+      // 解析 Markdown 表格轉為 HTML <table>
+      formattedText = parseMarkdownTable(formattedText);
+
+      loading.style.display = 'none';
+      outputContainer.style.display = 'block';
+      pdfTitle.innerText = `${province} ${travelers}人深度之旅 (${startDate} ~ ${endDate})`;
+      planDisplay.innerHTML = formattedText;
+
+    } catch (error) {
+      loading.style.display = 'none';
+      outputContainer.style.display = 'block';
+      planDisplay.innerHTML = `<span style="color: red; font-weight: bold;">生成失敗：${error.message}<br>請確認服務是否已正常部署並已於 Vercel 後台設定 GEMINI_API_KEY。</span>`;
+    }
+  });
+
+  // Markdown 表格轉 HTML 表格解析函式
+  function parseMarkdownTable(text) {
+    const lines = text.split('\n');
+    let inTable = false;
+    let html = '';
+
+    lines.forEach((line) => {
+      const trimmed = line.trim();
+      if (trimmed.startsWith('|') && trimmed.endsWith('|')) {
+        if (trimmed.includes('---')) return; // 跳過語法分隔線 |---|
+
+        const cells = trimmed.split('|').slice(1, -1).map(c => c.trim());
+        if (!inTable) {
+          inTable = true;
+          html += '<table class="result-table"><thead><tr>';
+          cells.forEach(cell => html += `<th>${cell}</th>`);
+          html += '</tr></thead><tbody>';
+        } else {
+          html += '<tr>';
+          cells.forEach(cell => html += `<td>${cell}</td>`);
+          html += '</tr>';
         }
-
-        const generatedText = data.candidates[0].content.parts[0].text;
-        
-        const formattedText = generatedText
-          .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-          .replace(/### (.*?)\n/g, '<h3 style="color:#1e3c72; margin-top:15px; margin-bottom:5px;">$1</h3>')
-          .replace(/## (.*?)\n/g, '<h2 style="color:#1e3c72; margin-top:20px; border-bottom:2px solid #1e3c72; padding-bottom:5px;">$1</h2>');
-
-        loading.style.display = 'none';
-        outputContainer.style.display = 'block';
-        pdfTitle.innerText = `${province} ${travelers}人深度之旅 (${startDate} ~ ${endDate})`;
-        planDisplay.innerHTML = formattedText;
-
-      } catch (error) {
-        loading.style.display = 'none';
-        outputContainer.style.display = 'block';
-        planDisplay.innerHTML = `<span style="color: red; font-weight: bold;">生成失敗：${error.message}<br>請檢查 API Key 是否填寫正確或網路連線狀況。</span>`;
+      } else {
+        if (inTable) {
+          inTable = false;
+          html += '</tbody></table>';
+        }
+        html += line + '\n';
       }
     });
 
-    // 功能一：匯出 PDF 檔案
-    document.getElementById('btn-export-pdf').addEventListener('click', function() {
-      const element = document.getElementById('pdf-content');
-      const opt = {
-        margin:       10,
-        filename:     'Have_a_Nice_Day_行程規劃.pdf',
-        image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 2 },
-        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-      };
+    if (inTable) html += '</tbody></table>';
+    return html;
+  }
 
-      html2pdf().set(opt).from(element).save();
-    });
+  // 功能一：匯出 PDF 檔案
+  document.getElementById('btn-export-pdf').addEventListener('click', function() {
+    const element = document.getElementById('pdf-content');
+    const opt = {
+      margin:       10,
+      filename:     'Have_a_Nice_Day_行程規劃.pdf',
+      image:        { type: 'jpeg', quality: 0.98 },
+      html2canvas:  { scale: 2 },
+      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
 
-    // 功能二：重新回到主頁 (顯示表單、隱藏結果)
-    document.getElementById('btn-reset-form').addEventListener('click', function() {
-      resultSection.style.display = 'none';
-      travelForm.style.display = 'block';
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    });
-  </script>
+    html2pdf().set(opt).from(element).save();
+  });
+
+  // 功能二：重新回到主頁
+  document.getElementById('btn-reset-form').addEventListener('click', function() {
+    resultSection.style.display = 'none';
+    travelForm.style.display = 'block';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+</script>
 </body>
 </html>
