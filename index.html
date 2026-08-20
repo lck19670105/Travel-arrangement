@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Have a Nice Day - 深度大陸旅遊規劃</title>
+  <!-- 引入 html2pdf.js 用於匯出 PDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: "PingFang TC", "Microsoft JhengHei", sans-serif;
+    }
+
+    body {
+      /* 設定背景為本機同資料夾下的長城圖片 (greatwall.jpg) */
+      background: linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.55)), 
+                  url('greatwall.jpg') no-repeat center center fixed; no-repeat center center fixed;
+      background-size: cover;
+      min-height: 100vh;
+      color: #333;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px;
+    }
+
+    header {
+      text-align: center;
+      color: #fff;
+      margin-bottom: 30px;
+      text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.7);
+    }
+
+    header h1 {
+      font-size: 2.8rem;
+      letter-spacing: 2px;
+      margin-bottom: 8px;
+    }
+
+    header p {
+      font-size: 1.1rem;
+      opacity: 0.9;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 850px;
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(10px);
+      border-radius: 16px;
+      padding: 30px;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .form-group.full-width {
+      grid-column: 1 / -1;
+    }
+
+    .form-group label {
+      font-weight: bold;
+      margin-bottom: 8px;
+      font-size: 0.95rem;
+      color: #444;
+    }
+
+    .form-group input, 
+    .form-group select,
+    .form-group textarea {
+      padding: 12px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 1rem;
+      outline: none;
+      transition: all 0.3s ease;
+    }
+
+    .form-group textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    .form-group input:focus, 
+    .form-group select:focus,
+    .form-group textarea:focus {
+      border-color: #2c3e50;
+      box-shadow: 0 0 8px rgba(44, 62, 80, 0.2);
+    }
+
+    .btn-submit {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #1e3c72, #2a5298);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.3s ease, transform 0.1s ease;
+    }
+
+    .btn-submit:hover {
+      background: linear-gradient(135deg, #2a5298, #1e3c72);
+    }
+
+    #result-section {
+      margin-top: 30px;
+      padding-top: 25px;
+      border-top: 2px dashed #ddd;
+      display: none;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 20px;
+      font-size: 1.1rem;
+      color: #1e3c72;
+      font-weight: bold;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 25px;
+    }
+
+    .btn-action {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .btn-pdf {
+      background-color: #27ae60;
+      color: white;
+    }
+
+    .btn-pdf:hover {
+      background-color: #219150;
+    }
+
+    .btn-reset {
+      background-color: #7f8c8d;
+      color: white;
+    }
+
+    .btn-reset:hover {
+      background-color: #636e72;
+    }
+
+    .plan-content {
+      line-height: 1.8;
+      color: #2c3e50;
+      white-space: pre-wrap;
+      font-size: 1rem;
+      padding: 20px;
+      background: #ffffff;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+
+    .plan-content strong {
+      color: #1e3c72;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Have a Nice Day</h1>
+    <p>探索壯麗山水，為您量身打造的深度大陸之旅</p>
+  </header>
+
+  <div class="container">
+    <!-- 行程輸入表單 -->
+    <form id="travel-form">
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="province">目的地地區（省分）：</label>
+          <select id="province" required>
+            <option value="" disabled selected>請選擇省分/直轄市</option>
+            <option value="北京市">北京市</option>
+            <option value="上海市">上海市</option>
+            <option value="天津市">天津市</option>
+            <option value="重慶市">重慶市</option>
+            <option value="四川省">四川省</option>
+            <option value="雲南省">雲南省</option>
+            <option value="貴州省">貴州省</option>
+            <option value="廣東省">廣東省</option>
+            <option value="廣西壯族自治區">廣西壯族自治區</option>
+            <option value="福建省">福建省</option>
+            <option value="浙江省">浙江省</option>
+            <option value="江蘇省">江蘇省</option>
+            <option value="安徽省">安徽省</option>
+            <option value="湖南省">湖南省</option>
+            <option value="湖北省">湖北省</option>
+            <option value="山東省">山東省</option>
+            <option value="山西省">山西省</option>
+            <option value="河南省">河南省</option>
+            <option value="陝西省">陝西省</option>
+            <option value="甘肅省">甘肅省</option>
+            <option value="青海省">青海省</option>
+            <option value="海南省">海南省</option>
+            <option value="江西省">江西省</option>
+            <option value="河北省">河北省</option>
+            <option value="黑龍江省">黑龍江省</option>
+            <option value="吉林省">吉林省</option>
+            <option value="遼寧省">遼寧省</option>
+            <option value="內蒙古自治區">內蒙古自治區</option>
+            <option value="寧夏回族自治區">寧夏回族自治區</option>
+            <option value="新疆維吾爾自治區">新疆維吾爾自治區</option>
+            <option value="西藏自治區">西藏自治區</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="startDate">出發日期：</label>
+          <input type="date" id="startDate" required>
+        </div>
+
+        <div class="form-group">
+          <label for="endDate">結束日期：</label>
+          <input type="date" id="endDate" required>
+        </div>
+
+        <div class="form-group">
+          <label for="travelers">行程人數：</label>
+          <input type="number" id="travelers" min="1" value="1" placeholder="填寫人數" required>
+        </div>
+
+        <div class="form-group">
+          <label for="budget">預算風格：</label>
+          <select id="budget" required>
+            <option value="經濟型">經濟型（背包客、青旅/平價連鎖、大眾運輸）</option>
+            <option value="普通型" selected>普通型（舒適三四星飯店、精選美食、方便交通）</option>
+            <option value="豪華型">豪華型（五星/奢華包車、頂級美饌、專屬體驗）</option>
+          </select>
+        </div>
+
+        <!-- 新增：指定必訪景點文字對話框 -->
+        <div class="form-group full-width">
+          <label for="mustVisit">指定必訪景點 / 特別需求（選填）：</label>
+          <textarea id="mustVisit" placeholder="例如：一定要包含九寨溝、黃龍；或者想去當地夜市吃小吃、不安排爬山行程..."></textarea>
+        </div>
+      </div>
+
+      <button type="submit" class="btn-submit">開始規劃專屬深度行程</button>
+    </form>
+
+    <!-- 結果與操作功能區 -->
+    <div id="result-section">
+      <div id="loading" class="loading">✨ Gemini 正在精心為您規劃行程中，請稍候...</div>
+      
+      <div id="output-container" style="display: none;">
+        <div class="action-buttons">
+          <button id="btn-export-pdf" class="btn-action btn-pdf">📄 輸出為 PDF 檔案</button>
+          <button id="btn-reset-form" class="btn-action btn-reset">↺ 返回修改參數</button>
+        </div>
+        
+        <!-- 匯出 PDF 的內容區域 -->
+        <div id="pdf-content">
+          <h2 id="pdf-title" style="text-align: center; color: #1e3c72; margin-bottom: 15px;"></h2>
+          <div id="plan-display" class="plan-content"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    
+    const travelForm = document.getElementById('travel-form');
+    const resultSection = document.getElementById('result-section');
+    const loading = document.getElementById('loading');
+    const outputContainer = document.getElementById('output-container');
+    const planDisplay = document.getElementById('plan-display');
+    const pdfTitle = document.getElementById('pdf-title');
+
+    travelForm.addEventListener('submit', async function(e) {
+      e.preventDefault();
+
+      const province = document.getElementById('province').value;
+      const startDate = document.getElementById('startDate').value;
+      const endDate = document.getElementById('endDate').value;
+      const travelers = document.getElementById('travelers').value;
+      const budget = document.getElementById('budget').value;
+      const mustVisit = document.getElementById('mustVisit').value.trim();
+
+      if (new Date(startDate) > new Date(endDate)) {
+        alert('結束日期不能早於出發日期！');
+        return;
+      }
+
+      // 畫面切換：隱藏表單，顯示載入狀態
+      travelForm.style.display = 'none';
+      resultSection.style.display = 'block';
+      loading.style.display = 'block';
+      outputContainer.style.display = 'none';
+      planDisplay.innerHTML = '';
+
+      // 構建 Prompt
+      let mustVisitPrompt = mustVisit ? `- **必須包含的景點或特別指示**：${mustVisit}` : '';
+
+      const prompt = `
+你是一位精通中國大陸旅遊的專業行程規劃師。請幫我設計一份深度的旅遊規劃。
+
+【旅遊需求細節】
+- 目的地省分/地區：${province}
+- 出發日期：${startDate}
+- 結束日期：${endDate}
+- 行程人數：${travelers} 人
+- 預算類型：${budget}
+${mustVisitPrompt}
+
+【規劃要求】
+1. **考量時間合理性**：景點與景點之間的交通時間必須合理，請給出大約的交通耗時與建議交通工具。如果有指定景點，請確保合理排入行程中。
+2. **完整考慮食衣住行**：
+   - **食**：推薦當地特色美食或代表性餐廳。
+   - **衣**：根據季節與該地區氣候，給出穿搭建議。
+   - **住**：根據預算類型推薦住宿地點建議（區位或飯店等級）。
+   - **行**：說明建議的交通方式（高鐵、地鐵/打車、包車、飛機等）。
+3. **每日行程明細**：請按「第一天」、「第二天」等依序條列，並給出上午、下午、晚上的具體行程規劃。
+4. **費用評估**：
+   - 列出**每日預估花費**（包含門票、餐飲、交通、住宿之小計，單位以人民幣 RMB 標示，並換算約略台幣 TWD）。
+   - 最後提供**全趟行程總預算評估**（所有人的總花費與人均花費）。
+
+請使用繁體中文，格式請保持結構清晰、易於閱讀。
+      `;
+
+      try {
+        const response = await fetch('/api/generate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ prompt: prompt })
+        });
+
+        const data = await response.json();
+
+        if (data.error) {
+          throw new Error(data.error.message || 'API 呼叫失敗');
+        }
+
+        const generatedText = data.candidates[0].content.parts[0].text;
+        
+        const formattedText = generatedText
+          .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+          .replace(/### (.*?)\n/g, '<h3 style="color:#1e3c72; margin-top:15px; margin-bottom:5px;">$1</h3>')
+          .replace(/## (.*?)\n/g, '<h2 style="color:#1e3c72; margin-top:20px; border-bottom:2px solid #1e3c72; padding-bottom:5px;">$1</h2>');
+
+        loading.style.display = 'none';
+        outputContainer.style.display = 'block';
+        pdfTitle.innerText = `${province} ${travelers}人深度之旅 (${startDate} ~ ${endDate})`;
+        planDisplay.innerHTML = formattedText;
+
+      } catch (error) {
+        loading.style.display = 'none';
+        outputContainer.style.display = 'block';
+        planDisplay.innerHTML = `<span style="color: red; font-weight: bold;">生成失敗：${error.message}<br>請檢查 API Key 是否填寫正確或網路連線狀況。</span>`;
+      }
+    });
+
+    // 功能一：匯出 PDF 檔案
+    document.getElementById('btn-export-pdf').addEventListener('click', function() {
+      const element = document.getElementById('pdf-content');
+      const opt = {
+        margin:       10,
+        filename:     'Have_a_Nice_Day_行程規劃.pdf',
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2 },
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+
+      html2pdf().set(opt).from(element).save();
+    });
+
+    // 功能二：重新回到主頁 (顯示表單、隱藏結果)
+    document.getElementById('btn-reset-form').addEventListener('click', function() {
+      resultSection.style.display = 'none';
+      travelForm.style.display = 'block';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  </script>
+</body>
+</html>
